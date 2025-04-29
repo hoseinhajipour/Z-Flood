@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 6037809134808020127}
   - component: {fileID: 661655193966339716}
   - component: {fileID: 4900437806184422572}
+  - component: {fileID: 2546775475331893049}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -69,6 +70,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   moveSpeed: 5
   rotationSpeed: 700
+  smoothRotationTime: 0.1
   joystick: {fileID: 0}
 --- !u!114 &661655193966339716
 MonoBehaviour:
@@ -87,6 +89,8 @@ MonoBehaviour:
   fireRate: 0.5
   detectionRange: 10
   BulletSpeed: 50
+  rotationSpeed: 700
+  rangeMaterial: {fileID: 2100000, guid: 8bd7f7dfb93a9e34dbb7dfa51ca46ad9, type: 2}
 --- !u!114 &4900437806184422572
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -101,7 +105,21 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 100
   currentHealth: 0
+  isDead: 0
   isPlayer: 1
+--- !u!114 &2546775475331893049
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4728990450499727092}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 01146bd5516adce4a9e9df3c622f1fe8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  animator: {fileID: 8505026253873847302}
 --- !u!1 &5732183420025966575
 GameObject:
   m_ObjectHideFlags: 0
@@ -209,5 +227,10 @@ PrefabInstance:
 --- !u!4 &2371075404132271740 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: fce254275a1431b48b80fb4299ddfa1e, type: 3}
+  m_PrefabInstance: {fileID: 2841061050298999191}
+  m_PrefabAsset: {fileID: 0}
+--- !u!95 &8505026253873847302 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 5866666021909216657, guid: fce254275a1431b48b80fb4299ddfa1e, type: 3}
   m_PrefabInstance: {fileID: 2841061050298999191}
   m_PrefabAsset: {fileID: 0}

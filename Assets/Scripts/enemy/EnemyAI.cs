@@ -3,33 +3,44 @@ using UnityEngine;
 
 public abstract class EnemyAI : MonoBehaviour
 {
-    public float moveSpeed = 2f;
+    public float moveSpeed = 3f;
     protected Transform player;
 
     public int health = 3;
     public float attackRange = 2f;  // فاصله ای که در آن دشمن شروع به حمله می‌کند
+    public float attackCooldown = 2f;
 
-    public int attackDamage = -1;
-    private bool isAttacking = false; // وضعیت حمله
+    public int attackDamage = 10;
+    private float lastAttackTime;
+    private bool isMoving = false;
+    private bool isAttacking = false;
+    private Vector3 lastPosition;
 
     public Animator animator; // رفرنس به انیماتور دشمن
 
     protected virtual void Start()
     {
         player = GameObject.FindGameObjectWithTag("Player")?.transform;
+        lastPosition = transform.position;
     }
 
     protected virtual void Update()
     {
         if (player == null) return;
 
-        // محاسبه فاصله از دشمن به بازیکن
         float distanceToPlayer = Vector3.Distance(transform.position, player.position);
 
-        // اگر فاصله کمتر از attackRange باشد، دشمن حمله می‌کند
+        // بررسی حرکت
+        isMoving = Vector3.Distance(transform.position, lastPosition) > 0.01f;
+        lastPosition = transform.position;
+
         if (distanceToPlayer <= attackRange)
         {
-            AttackPlayer();
+            // اگر در محدوده حمله است و زمان کولداون گذشته
+            if (Time.time >= lastAttackTime + attackCooldown)
+            {
+                Attack();
+            }
         }
         else
         {
@@ -43,36 +54,42 @@ public abstract class EnemyAI : MonoBehaviour
 
         // محاسبه جهت حرکت به سمت بازیکن
         Vector3 dir = (player.position - transform.position).normalized;
+        dir.y = 0; // فقط حرکت در صفحه XZ
 
         // حرکت دشمن به سمت بازیکن
         transform.position += dir * moveSpeed * Time.deltaTime;
 
         // محاسبه چرخش به سمت بازیکن
-        Quaternion targetRotation = Quaternion.LookRotation(dir);
-        transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 5f); // چرخش نرم
+        if (dir != Vector3.zero)
+        {
+            Quaternion targetRotation = Quaternion.LookRotation(dir);
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, 10f * Time.deltaTime);
+        }
     }
 
-    protected virtual void AttackPlayer()
+    protected virtual void Attack()
     {
-        if (!isAttacking)
-        {
-            isAttacking = true;
-            animator.SetTrigger("Attack");  // اجرای انیمیشن حمله
+        isAttacking = true;
+        lastAttackTime = Time.time;
 
-            // می‌توانید در اینجا آسیب به بازیکن را نیز وارد کنید
-            // مثلا:
-            // player.GetComponent<PlayerHealth>().TakeDamage(attackDamage);
-            player.GetComponent<Health>().TakeDamage(attackDamage);
-            // مدت زمان حمله را در اینجا تنظیم کنید
-            // می‌توانید از یک Coroutine برای صبر کردن بعد از انجام حمله استفاده کنید
-            StartCoroutine(ResetAttack());
+        animator.SetTrigger("Attack");  // اجرای انیمیشن حمله
+
+        // آسیب به بازیکن
+        Health playerHealth = player.GetComponent<Health>();
+        if (playerHealth != null)
+        {
+            playerHealth.TakeDamage(attackDamage);
         }
+
+        // مدت زمان حمله را در اینجا تنظیم کنید
+        // می‌توانید از یک Coroutine برای صبر کردن بعد از انجام حمله استفاده کنید
+        StartCoroutine(ResetAttack());
     }
 
     private IEnumerator ResetAttack()
     {
         // زمان لازم برای پایان انیمیشن حمله (باید مطابق با انیمیشن تنظیم شود)
-        yield return new WaitForSeconds(1f);
+        yield return new WaitForSeconds(0.5f);
 
         isAttacking = false; // بعد از پایان حمله، دشمن آماده حمله بعدی می‌شود
     }
@@ -85,5 +102,17 @@ public abstract class EnemyAI : MonoBehaviour
             Destroy(gameObject);
             // امتیاز دادن و انفجار بعدا اضافه می‌شود
         }
+    }
+
+    // متد برای بررسی وضعیت حرکت
+    public bool IsMoving()
+    {
+        return isMoving;
+    }
+
+    // متد برای بررسی وضعیت حمله
+    public bool IsAttacking()
+    {
+        return isAttacking;
     }
 }

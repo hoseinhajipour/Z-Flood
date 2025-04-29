@@ -1,11 +1,17 @@
 using UnityEngine;
+using System;
 
 public class Health : MonoBehaviour
 {
     public int maxHealth = 100;    // Maximum health
     public int currentHealth;      // Current health
+    public bool isDead = false;
 
     public bool isPlayer = false;  // To distinguish between player and enemy
+
+    // رویدادها برای انیمیشن‌ها
+    public event Action OnDamageTaken;
+    public event Action OnDeath;
 
     void Start()
     {
@@ -15,7 +21,13 @@ public class Health : MonoBehaviour
     // Method to handle taking damage
     public void TakeDamage(int damage)
     {
+        if (isDead) return;
+
         currentHealth -= damage;
+        currentHealth = Mathf.Max(0, currentHealth);
+
+        // فراخوانی رویداد دریافت آسیب
+        OnDamageTaken?.Invoke();
 
         // If health goes below 0, trigger death
         if (currentHealth <= 0)
@@ -25,15 +37,21 @@ public class Health : MonoBehaviour
     }
 
     // Method to handle healing (optional)
-    public void Heal(int healAmount)
+    public void Heal(int amount)
     {
-        currentHealth += healAmount;
-        if (currentHealth > maxHealth) currentHealth = maxHealth; // Clamp to max health
+        if (isDead) return;
+
+        currentHealth += amount;
+        currentHealth = Mathf.Min(currentHealth, maxHealth);
     }
 
     // Method to handle death
     void Die()
     {
+        isDead = true;
+        // فراخوانی رویداد مرگ
+        OnDeath?.Invoke();
+
         if (isPlayer)
         {
             // Handle player death (you can add game over, respawn logic, etc.)

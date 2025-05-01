@@ -44,7 +44,7 @@ public class GameManager : MonoBehaviour
     {
         if (CanUpgrade("shootingRange"))
         {
-            shootingRange += 2f;
+            shootingRange += 10f;
             score -= 100;
         }
     }

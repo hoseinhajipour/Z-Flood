@@ -6,7 +6,6 @@ public abstract class EnemyAI : MonoBehaviour
     public float moveSpeed = 3f;
     protected Transform player;
 
-    public int health = 3;
     public float attackRange = 2f;  // فاصله ای که در آن دشمن شروع به حمله می‌کند
     public float attackCooldown = 2f;
 
@@ -17,11 +16,13 @@ public abstract class EnemyAI : MonoBehaviour
     private Vector3 lastPosition;
 
     public Animator animator; // رفرنس به انیماتور دشمن
+    private Health health; // رفرنس به کامپوننت Health
 
     protected virtual void Start()
     {
         player = GameObject.FindGameObjectWithTag("Player")?.transform;
         lastPosition = transform.position;
+        health = GetComponent<Health>();
     }
 
     protected virtual void Update()
@@ -96,11 +97,9 @@ public abstract class EnemyAI : MonoBehaviour
 
     public virtual void TakeDamage(int dmg)
     {
-        health -= dmg;
-        if (health <= 0)
+        if (health != null)
         {
-            Destroy(gameObject);
-            // امتیاز دادن و انفجار بعدا اضافه می‌شود
+            health.TakeDamage(dmg);
         }
     }
 

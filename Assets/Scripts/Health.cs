@@ -61,6 +61,14 @@ public class Health : MonoBehaviour
         {
             // Handle enemy death (you can add enemy destruction, score, etc.)
             Debug.Log("Enemy died!");
+            
+            // Spawn rewards when enemy dies
+            RewardSystem rewardSystem = FindObjectOfType<RewardSystem>();
+            if (rewardSystem != null)
+            {
+                rewardSystem.SpawnReward(transform.position);
+            }
+            
             Destroy(gameObject);  // Destroy the enemy object
         }
     }

@@ -22,8 +22,29 @@ public class PlayerController_ : MonoBehaviour
 
     void MovePlayer()
     {
-        // حرکت بازیکن با استفاده از Joystick (حرکت در جهت X و Z)
-        Vector3 moveDir = new Vector3(joystick.Horizontal, 0, joystick.Vertical);
+        Vector3 moveDir = Vector3.zero;
+
+        // جمع کردن ورودی‌های کیبورد و جوی استیک
+        float horizontalInput = 0f;
+        float verticalInput = 0f;
+
+        // دریافت ورودی از کیبورد
+        horizontalInput += Input.GetAxisRaw("Horizontal");
+        verticalInput += Input.GetAxisRaw("Vertical");
+
+        // اگر جوی استیک موجود باشه، ورودی اون رو هم اضافه کن
+        if (joystick != null)
+        {
+            horizontalInput += joystick.Horizontal;
+            verticalInput += joystick.Vertical;
+        }
+
+        // محدود کردن مقدار ورودی بین -1 و 1
+        horizontalInput = Mathf.Clamp(horizontalInput, -1f, 1f);
+        verticalInput = Mathf.Clamp(verticalInput, -1f, 1f);
+
+        // ایجاد بردار حرکت
+        moveDir = new Vector3(horizontalInput, 0, verticalInput);
         moveDir.Normalize(); // نرمال کردن جهت حرکت برای جلوگیری از سرعت زیاد هنگام حرکت قطری
 
         // بررسی وضعیت حرکت

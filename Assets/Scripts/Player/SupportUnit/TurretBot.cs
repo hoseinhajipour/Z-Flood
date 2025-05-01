@@ -1,43 +1,146 @@
 using UnityEngine;
+using System.Collections;
 
 public class TurretBot : MonoBehaviour
 {
-    public GameObject bulletPrefab;
-    public int damage = 15;
-    public float fireRate = 1f;
-    public float range = 8f;
-    public Transform target;
+    [Header("Turret Settings")]
+    public float spawnInterval = 10f;
+    public int maxTurrets = 2;
+    public float turretLifetime = 5f;
+    public float spawnRadius = 3f;
+    public float minDistanceFromPlayer = 2f;
 
-    private float nextFireTime;
+    [Header("Prefabs")]
+    public GameObject turretPrefab;
+
+    private float nextSpawnTime;
+    private int currentTurrets;
 
     void Start()
     {
-        target = GameObject.FindGameObjectWithTag("Enemy")?.transform;
+        currentTurrets = 0;
     }
 
     void Update()
     {
-        if (target != null && Time.time >= nextFireTime)
+        if (Time.time >= nextSpawnTime && currentTurrets < maxTurrets)
         {
-            FireAtEnemy();
-            nextFireTime = Time.time + 1f / fireRate;
+            SpawnTurret();
+            nextSpawnTime = Time.time + spawnInterval;
         }
     }
 
-    void FireAtEnemy()
+    void SpawnTurret()
     {
-        if (target != null)
+        // Find a suitable spawn position
+        Vector3 spawnPosition = FindSuitableSpawnPosition();
+        
+        // Create turret
+        GameObject turret = Instantiate(turretPrefab, spawnPosition, Quaternion.identity);
+        currentTurrets++;
+
+        // Start lifetime countdown
+        StartCoroutine(DestroyTurretAfterTime(turret));
+    }
+
+    Vector3 FindSuitableSpawnPosition()
+    {
+        // Find player position using tag
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+        if (player == null)
         {
-            Vector2 direction = (target.position - transform.position).normalized;
-            GameObject bullet = Instantiate(bulletPrefab, transform.position, Quaternion.identity);
-            bullet.GetComponent<Rigidbody2D>().velocity = direction * 10f;
-            bullet.GetComponent<Bullet>().damage = damage;
+            Debug.LogError("Player not found! Make sure player has 'Player' tag");
+            return transform.position;
+        }
+
+        Vector3 playerPosition = player.transform.position;
+        Vector3 spawnPosition = playerPosition; // Initialize with player position
+        int maxAttempts = 10;
+        int attempts = 0;
+        bool validPosition = false;
+
+        while (!validPosition && attempts < maxAttempts)
+        {
+            // Get random angle around player
+            float angle = Random.Range(0f, 360f);
+            float distance = Random.Range(minDistanceFromPlayer, spawnRadius);
+            
+            // Calculate position relative to player
+            Vector3 direction = Quaternion.Euler(0, angle, 0) * Vector3.forward;
+            spawnPosition = playerPosition + direction * distance;
+            
+            // Make sure it's on the ground
+            RaycastHit hit;
+            if (Physics.Raycast(spawnPosition + Vector3.up * 10f, Vector3.down, out hit, 20f))
+            {
+                spawnPosition = hit.point;
+                
+                // Check if position is valid (not too close to player and not in obstacles)
+                float distanceToPlayer = Vector3.Distance(spawnPosition, playerPosition);
+                if (distanceToPlayer >= minDistanceFromPlayer)
+                {
+                    // Check if there's enough space around the spawn position
+                    Collider[] colliders = Physics.OverlapSphere(spawnPosition, 1f);
+                    if (colliders.Length == 0)
+                    {
+                        validPosition = true;
+                    }
+                }
+            }
+            
+            attempts++;
+        }
+
+        // If we couldn't find a valid position after max attempts, spawn at a default position
+        if (!validPosition)
+        {
+            Vector3 direction = player.transform.forward;
+            spawnPosition = playerPosition + direction * minDistanceFromPlayer;
+            
+            // Make sure it's on the ground
+            RaycastHit hit;
+            if (Physics.Raycast(spawnPosition + Vector3.up * 10f, Vector3.down, out hit, 20f))
+            {
+                spawnPosition = hit.point;
+            }
+        }
+
+        return spawnPosition;
+    }
+
+    IEnumerator DestroyTurretAfterTime(GameObject turret)
+    {
+        yield return new WaitForSeconds(turretLifetime);
+        
+        if (turret != null)
+        {
+            // Play destruction effect if available
+            TurretBotController turretController = turret.GetComponent<TurretBotController>();
+            if (turretController != null)
+            {
+                turretController.PlayDestructionEffect();
+            }
+            
+            Destroy(turret);
+            currentTurrets--;
         }
     }
 
-    public void UpgradeTurret(float fireRateIncrease, int damageIncrease)
+    public void UpgradeTurretBot(float newSpawnInterval, int newMaxTurrets, float newLifetime)
     {
-        fireRate += fireRateIncrease;
-        damage += damageIncrease;
+        spawnInterval = newSpawnInterval;
+        maxTurrets = newMaxTurrets;
+        turretLifetime = newLifetime;
+    }
+
+    void OnDrawGizmosSelected()
+    {
+        // Draw spawn radius
+        Gizmos.color = Color.blue;
+        Gizmos.DrawWireSphere(transform.position, spawnRadius);
+        
+        // Draw minimum distance
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(transform.position, minDistanceFromPlayer);
     }
 }

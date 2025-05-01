@@ -132,8 +132,8 @@ MonoBehaviour:
   coinPrefab: {fileID: 7300395032653732146, guid: 7b69f97af49b432449599ea121e60ac3, type: 3}
   healthPackPrefab: {fileID: 2563829096583087563, guid: 45ee17001a277a147b2098ad4be36663, type: 3}
   nothingChance: 20
-  coinChance: 60
-  healthPackChance: 20
+  coinChance: 70
+  healthPackChance: 10
 --- !u!1001 &2511233621675582558
 PrefabInstance:
   m_ObjectHideFlags: 0

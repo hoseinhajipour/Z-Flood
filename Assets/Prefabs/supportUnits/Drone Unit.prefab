@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 3372052725861491878}
   - component: {fileID: 3372052725861491877}
   m_Layer: 0
-  m_Name: Drone
+  m_Name: Drone Unit
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -59,12 +59,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b8104e9e760e1f849a32ec1d38eca687, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSpeed: 4
+  moveSpeed: 2
   offset: {x: 1, y: 3, z: -2}
   detectionRange: 10
   fireRate: 1
   damage: 1
   bulletSpeed: 10
+  rotationSpeed: 500
+  hoverSpeed: 2
+  hoverHeight: 0.01
   player: {fileID: 0}
   bulletPrefab: {fileID: 1742190987240628944, guid: ae0068a979138074b96d6a9547b36130, type: 3}
 --- !u!1001 &7901386043645231497

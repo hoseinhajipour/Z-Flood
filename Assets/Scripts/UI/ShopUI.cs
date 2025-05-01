@@ -1,48 +1,121 @@
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
+using System.Collections.Generic;
+
+[System.Serializable]
+public class SupportUnit
+{
+    public string unitName;
+    public GameObject prefab;
+    public int price;
+    public Sprite icon;
+    [HideInInspector] public bool isPurchased = false;
+    [HideInInspector] public Button buyButton;
+    [HideInInspector] public TextMeshProUGUI priceText;
+}
 
 public class ShopUI : MonoBehaviour
 {
-    public Button buyHealthPackButton;
-    public Button buySpeedPackButton;
-    public Button watchAdForLifeButton;
     public GameManager gameManager;
+    
+    [Header("UI Elements")]
+    public GameObject supportUnitButtonPrefab; // Prefab for the button with icon and price
+    public Transform supportUnitsContainer; // Parent transform for the buttons
+    
+    [Header("Support Units")]
+    public List<SupportUnit> supportUnits = new List<SupportUnit>();
 
     void Start()
     {
-        buyHealthPackButton.onClick.AddListener(BuyHealthPack);
-        buySpeedPackButton.onClick.AddListener(BuySpeedPack);
-        watchAdForLifeButton.onClick.AddListener(WatchAdForLife);
+        CreateSupportUnitButtons();
     }
 
-    void BuyHealthPack()
+    void CreateSupportUnitButtons()
     {
-        if (gameManager.score >= 200)
+        // Clear existing buttons
+        foreach (Transform child in supportUnitsContainer)
         {
-            gameManager.playerHealth += 20;
-            gameManager.score -= 200;
+            Destroy(child.gameObject);
+        }
+
+        // Create buttons for each support unit
+        foreach (var unit in supportUnits)
+        {
+            // Instantiate button prefab
+            GameObject buttonObj = Instantiate(supportUnitButtonPrefab, supportUnitsContainer);
+            
+            // Get button component
+            Button button = buttonObj.GetComponent<Button>();
+            unit.buyButton = button;
+            
+            // Set button icon
+            Image iconImage = buttonObj.transform.Find("Icon").GetComponent<Image>();
+            if (iconImage != null)
+            {
+                iconImage.sprite = unit.icon;
+            }
+            
+            // Set price text
+            TextMeshProUGUI priceText = buttonObj.transform.Find("PriceText").GetComponent<TextMeshProUGUI>();
+            if (priceText != null)
+            {
+                priceText.text = $"Price: {unit.price}";
+                unit.priceText = priceText;
+            }
+            
+            // Set unit name text
+            TextMeshProUGUI nameText = buttonObj.transform.Find("NameText").GetComponent<TextMeshProUGUI>();
+            if (nameText != null)
+            {
+                nameText.text = unit.unitName;
+            }
+            
+            // Add click listener
+            button.onClick.AddListener(() => BuySupportUnit(unit));
+        }
+
+        UpdateButtonStates();
+    }
+
+    void UpdateButtonStates()
+    {
+        foreach (var unit in supportUnits)
+        {
+            if (unit.buyButton != null)
+            {
+                unit.buyButton.interactable = !unit.isPurchased && gameManager.score >= unit.price;
+            }
         }
     }
 
-    void BuySpeedPack()
+    void BuySupportUnit(SupportUnit unit)
     {
-        if (gameManager.score >= 150)
+        if (!unit.isPurchased && gameManager.score >= unit.price)
         {
-            gameManager.playerSpeed += 2f;
-            gameManager.score -= 150;
+            gameManager.score -= unit.price;
+            unit.isPurchased = true;
+            unit.buyButton.interactable = false;
+            SpawnSupportUnit(unit.prefab);
+            UpdateButtonStates();
         }
     }
 
-    void WatchAdForLife()
+    void SpawnSupportUnit(GameObject prefab)
     {
-        // Code for watching ad and rewarding extra life
-        StartCoroutine(WatchAdCoroutine());
+        if (prefab != null)
+        {
+            GameObject player = GameObject.FindGameObjectWithTag("Player");
+            if (player != null)
+            {
+                Vector3 spawnPosition = player.transform.position + new Vector3(2f, 0f, 0f);
+                Instantiate(prefab, spawnPosition, Quaternion.identity);
+            }
+        }
     }
 
-    private System.Collections.IEnumerator WatchAdCoroutine()
+    void Update()
     {
-        // Simulate watching an ad
-        yield return new WaitForSeconds(5f); // Simulating the ad duration
-        gameManager.playerHealth += 50; // Reward the player with extra life
+        UpdateButtonStates();
     }
 }

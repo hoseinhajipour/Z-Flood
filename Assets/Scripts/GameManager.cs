@@ -7,6 +7,7 @@ public class GameManager : MonoBehaviour
     public float playerSpeed;
     public float shootingRange;
     public bool canUpgrade;
+    public GameObject gameOverPanel;
 
     void Start()
     {
@@ -52,5 +53,14 @@ public class GameManager : MonoBehaviour
     public void AddScore(int amount)
     {
         score += amount;
+    }
+
+    public void ShowGameOver()
+    {
+        if (gameOverPanel != null)
+            gameOverPanel.SetActive(true);
+
+        // توقف زمان بازی (اختیاری)
+        Time.timeScale = 0f;
     }
 }

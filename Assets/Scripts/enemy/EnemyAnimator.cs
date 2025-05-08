@@ -16,7 +16,6 @@ public class EnemyAnimator : MonoBehaviour
     void Start()
     {
         // دریافت کامپوننت‌های مورد نیاز
-       // animator = GetComponent<Animator>();
         enemyAI = GetComponent<EnemyAI>();
         health = GetComponent<Health>();
 

@@ -178,4 +178,53 @@ public class GameUI : MonoBehaviour
         Debug.Log("GameUI: SDK initialized successfully");
         RequestRewardedAd();
     }
+
+    public void ShowRewardedAdForContinue()
+    {
+        if (!_isInitialized)
+        {
+            Debug.Log("SDK not initialized yet");
+            return;
+        }
+
+        if (string.IsNullOrEmpty(_responseId))
+        {
+            Debug.Log("Ad is not ready yet. Requesting a new ad...");
+            RequestRewardedAd();
+            return;
+        }
+
+        Debug.Log("Showing ad for continue with response ID: " + _responseId);
+        TapsellPlus.RequestRewardedVideoAd(ZONE_ID,
+            tapsellPlusAdModel =>
+            {
+                _responseId = tapsellPlusAdModel.responseId;
+                TapsellPlus.ShowRewardedVideoAd(_responseId,
+                    adModel => { Debug.Log("Ad opened: " + adModel.zoneId); },
+                    adModel =>
+                    {
+                        Debug.Log("Reward granted: " + adModel.zoneId);
+                        var gameOverPanel = FindObjectOfType<GameOverPanelController>();
+                        if (gameOverPanel != null)
+                            gameOverPanel.OnRewardedAdSuccess();
+                    },
+                    adModel =>
+                    {
+                        Debug.Log("Ad closed: " + adModel.zoneId);
+                        RequestRewardedAd();
+                    },
+                    error =>
+                    {
+                        Debug.LogError("Ad show error: " + error);
+                        Invoke("RequestRewardedAd", 30f);
+                    }
+                );
+            },
+            error =>
+            {
+                Debug.LogError("Ad request failed: " + error);
+                Invoke("RequestRewardedAd", 30f);
+            }
+        );
+    }
 }

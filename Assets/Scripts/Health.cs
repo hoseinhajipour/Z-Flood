@@ -56,19 +56,31 @@ public class Health : MonoBehaviour
         {
             // Handle player death (you can add game over, respawn logic, etc.)
             Debug.Log("Player died!");
+
+            // غیرفعال کردن کنترل حرکت و شوتینگ
+            var controller = GetComponent<PlayerController_>();
+            if (controller != null) controller.enabled = false;
+
+            var shooter = GetComponent<AutoShooter>();
+            if (shooter != null) shooter.enabled = false;
+
+
+            // نمایش منوی GameOver
+            var gm = FindObjectOfType<GameManager>();
+            if (gm != null) gm.ShowGameOver();
         }
         else
         {
             // Handle enemy death (you can add enemy destruction, score, etc.)
             Debug.Log("Enemy died!");
-            
+
             // Spawn rewards when enemy dies
             RewardSystem rewardSystem = FindObjectOfType<RewardSystem>();
             if (rewardSystem != null)
             {
                 rewardSystem.SpawnReward(transform.position);
             }
-            
+
             Destroy(gameObject);  // Destroy the enemy object
         }
     }

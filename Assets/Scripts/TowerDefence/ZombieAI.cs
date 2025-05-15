@@ -27,10 +27,15 @@ public class ZombieAI : MonoBehaviour
     private bool isFollowingPlayer = false;
     private float nextAttackTime;
     private NavMeshAgent navAgent;
+    private Transform baseTower; // اضافه کردن متغیر برای BaseTower
 
     void Start()
     {
-        player = GameObject.FindGameObjectWithTag("Player").transform;
+        player = GameObject.FindGameObjectWithTag("Player")?.transform;
+        // پیدا کردن BaseTower با تگ
+        GameObject baseObj = GameObject.FindGameObjectWithTag("BaseTower");
+        if (baseObj != null)
+            baseTower = baseObj.transform;
         navAgent = GetComponent<NavMeshAgent>();
         if (navAgent != null)
         {
@@ -43,13 +48,16 @@ public class ZombieAI : MonoBehaviour
 
     void Update()
     {
-        if (player == null) return;
+        // اگر پلیر و BaseTower هیچکدام نبودند، کاری نکن
+        if (player == null && baseTower == null) return;
 
-        float distanceToPlayer = Vector3.Distance(transform.position, player.position);
+        float distanceToPlayer = player != null ? Vector3.Distance(transform.position, player.position) : Mathf.Infinity;
+        float distanceToBase = baseTower != null ? Vector3.Distance(transform.position, baseTower.position) : Mathf.Infinity;
 
         isMoving = Vector3.Distance(transform.position, lastPosition) > 0.01f;
         lastPosition = transform.position;
 
+        // اولویت با پلیر است اگر در محدوده باشد
         if (distanceToPlayer <= playerDetectionRange)
         {
             isFollowingPlayer = true;
@@ -59,9 +67,21 @@ public class ZombieAI : MonoBehaviour
             isFollowingPlayer = false;
         }
 
-        if (isFollowingPlayer)
+        if (isFollowingPlayer && player != null)
         {
             FollowPlayer();
+        }
+        else if (baseTower != null)
+        {
+            // اگر هنوز به BaseTower نرسیده‌ایم، مسیر pathPoints را دنبال کن
+            if (pathPoints != null && currentPathIndex < pathPoints.Length)
+            {
+                FollowPath();
+            }
+            else
+            {
+                FollowBaseTower();
+            }
         }
         else if (pathPoints != null && pathPoints.Length > 0)
         {
@@ -117,6 +137,31 @@ public class ZombieAI : MonoBehaviour
         }
     }
 
+    void FollowBaseTower()
+    {
+        float distanceToBase = Vector3.Distance(transform.position, baseTower.position);
+        if (navAgent != null)
+        {
+            navAgent.SetDestination(baseTower.position);
+        }
+        else
+        {
+            if (distanceToBase > attackRange)
+            {
+                Vector3 direction = (baseTower.position - transform.position).normalized;
+                transform.position += direction * moveSpeed * Time.deltaTime;
+                transform.rotation = Quaternion.Slerp(transform.rotation,
+                    Quaternion.LookRotation(direction), rotationSpeed * Time.deltaTime);
+            }
+        }
+
+        if (distanceToBase <= attackRange &&
+            Time.time >= nextAttackTime)
+        {
+            AttackBaseTower();
+        }
+    }
+
     void AttackPlayer()
     {
         isAttacking = true;
@@ -133,6 +178,25 @@ public class ZombieAI : MonoBehaviour
         StartCoroutine(ResetAttack());
     }
 
+    void AttackBaseTower()
+    {
+        isAttacking = true;
+        if (animator != null)
+        {
+            animator.SetTrigger("Attack");
+        }
+        if (baseTower != null)
+        {
+            Health baseHealth = baseTower.GetComponent<Health>();
+            if (baseHealth != null)
+            {
+                baseHealth.TakeDamage(attackDamage);
+            }
+        }
+        nextAttackTime = Time.time + attackCooldown;
+        StartCoroutine(ResetAttack());
+    }
+
     private IEnumerator ResetAttack()
     {
         yield return new WaitForSeconds(0.5f);
@@ -141,9 +205,21 @@ public class ZombieAI : MonoBehaviour
 
     public void SetPath(Transform[] points)
     {
+        if (points == null || points.Length == 0)
+        {
+            Debug.LogWarning($"{name}: مسیر خالی است.");
+            return;
+        }
+
         pathPoints = points;
         currentPathIndex = 0;
+
+        if (navAgent != null && pathPoints[0] != null)
+        {
+            navAgent.SetDestination(pathPoints[0].position);
+        }
     }
+
 
     public void SetPlayerDetectionRange(float range)
     {
@@ -164,4 +240,4 @@ public class ZombieAI : MonoBehaviour
     {
         return isAttacking;
     }
-} 
+}

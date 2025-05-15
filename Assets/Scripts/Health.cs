@@ -74,14 +74,24 @@ public class Health : MonoBehaviour
             // Handle enemy death (you can add enemy destruction, score, etc.)
             Debug.Log("Enemy died!");
 
-            // Spawn rewards when enemy dies
-            RewardSystem rewardSystem = FindObjectOfType<RewardSystem>();
-            if (rewardSystem != null)
+            // اگر این آبجکت BaseTower است
+            if (CompareTag("BaseTower"))
             {
-                rewardSystem.SpawnReward(transform.position);
+                // نمایش منوی GameOver
+                var gm = FindObjectOfType<GameManager>();
+                if (gm != null) gm.ShowGameOver();
             }
+            else
+            {
+                // Spawn rewards when enemy dies
+                RewardSystem rewardSystem = FindObjectOfType<RewardSystem>();
+                if (rewardSystem != null)
+                {
+                    rewardSystem.SpawnReward(transform.position);
+                }
 
-            Destroy(gameObject);  // Destroy the enemy object
+                Destroy(gameObject);  // Destroy the enemy object
+            }
         }
     }
 

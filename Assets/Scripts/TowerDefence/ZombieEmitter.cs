@@ -14,7 +14,17 @@ public class ZombieEmitter : MonoBehaviour
 
     [Header("Wave Settings")]
     public List<ZombieWave> waves = new List<ZombieWave>();
-    public Transform[] pathPoints;
+
+    [System.Serializable]
+    public class Path
+    {
+        public Transform[] points;
+    }
+
+    [Header("Path Settings")]
+    public Transform mainPath; // The main node containing all path branches
+    public List<Path> multiPaths = new List<Path>(); // List of all paths
+
     public float pathPointRadius = 0.5f;
 
     [Header("Spawn Settings")]
@@ -55,19 +65,30 @@ public class ZombieEmitter : MonoBehaviour
         if (currentWaveIndex >= waves.Count) return;
 
         ZombieWave currentWave = waves[currentWaveIndex];
-        
+
         // Find spawn position
         Vector3 spawnPosition = GetRandomSpawnPosition();
-        
-        // Create zombie
+
+        // Instantiate zombie
         GameObject zombie = Instantiate(currentWave.zombiePrefab, spawnPosition, Quaternion.identity);
-        
-        // Setup zombie path following
-        ZombieAI zombieAI = zombie.GetComponent<ZombieAI>();
-        if (zombieAI != null)
+
+        // Select a path randomly from multiPaths
+        Transform[] selectedPath = null;
+        if (multiPaths != null && multiPaths.Count > 0)
         {
-            zombieAI.SetPath(pathPoints);
+            int pathIndex = Random.Range(0, multiPaths.Count);
+            selectedPath = multiPaths[pathIndex].points;
+        }
+
+        // Set up zombie path following and NavMesh
+        ZombieAI zombieAI = zombie.GetComponent<ZombieAI>();
+        if (zombieAI != null && selectedPath != null)
+        {
+            zombieAI.SetPath(selectedPath);
             zombieAI.SetPlayerDetectionRange(playerDetectionRange);
+            var agent = zombie.GetComponent<UnityEngine.AI.NavMeshAgent>();
+            if (agent != null)
+                agent.enabled = true;
         }
 
         zombiesSpawnedInWave++;
@@ -95,16 +116,44 @@ public class ZombieEmitter : MonoBehaviour
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, spawnRadius);
 
-        // Draw path
-        if (pathPoints != null && pathPoints.Length > 1)
+        // Draw all paths in multiPaths
+        if (multiPaths != null && multiPaths.Count > 0)
         {
             Gizmos.color = Color.yellow;
-            for (int i = 0; i < pathPoints.Length - 1; i++)
+            foreach (var path in multiPaths)
             {
-                Gizmos.DrawLine(pathPoints[i].position, pathPoints[i + 1].position);
-                Gizmos.DrawWireSphere(pathPoints[i].position, pathPointRadius);
+                if (path != null && path.points != null && path.points.Length > 1)
+                {
+                    for (int i = 0; i < path.points.Length - 1; i++)
+                    {
+                        Gizmos.DrawLine(path.points[i].position, path.points[i + 1].position);
+                        Gizmos.DrawWireSphere(path.points[i].position, pathPointRadius);
+                    }
+                    Gizmos.DrawWireSphere(path.points[path.points.Length - 1].position, pathPointRadius);
+                }
             }
-            Gizmos.DrawWireSphere(pathPoints[pathPoints.Length - 1].position, pathPointRadius);
         }
     }
-} 
+
+#if UNITY_EDITOR
+    [ContextMenu("Auto Fill MultiPaths From MainPath")]
+    public void AutoFillMultiPaths()
+    {
+        multiPaths.Clear();
+        if (mainPath == null) return;
+
+        foreach (Transform child in mainPath)
+        {
+            Path path = new Path();
+            List<Transform> points = new List<Transform>();
+            foreach (Transform point in child)
+            {
+                points.Add(point);
+            }
+            path.points = points.ToArray();
+            multiPaths.Add(path);
+        }
+        UnityEditor.EditorUtility.SetDirty(this);
+    }
+#endif
+}
